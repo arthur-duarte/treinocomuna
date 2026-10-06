@@ -11,6 +11,7 @@ Aplicativo Android de treino com estética de cartaz revolucionário, mascote **
 - Registro de peso e medidas corporais
 - Calendário mensal com treinos concluídos
 - Foto ao fim do treino usando a câmera
+- Ilustrações vetoriais dos aparelhos dentro do treino
 - Histórico local
 - Progresso de peso, cintura e abdômen
 - Mascote Camarada em toda a experiência
@@ -33,20 +34,24 @@ Use o Expo Go para testar rapidamente no Android.
 
 ## Gerar APK
 
-Instale o EAS CLI:
+### Pelo próprio GitHub
+
+O repositório já possui o workflow **Build APK**.
+
+1. Abra a aba **Actions** do repositório.
+2. Escolha **Build APK**.
+3. Clique em **Run workflow**.
+4. Quando terminar, abra a execução e baixe o artefato **Treino-Comuna-Plus-APK**.
+
+Esse build gera um APK de depuração instalável para testes.
+
+### Pelo EAS
+
+Também é possível gerar pelo EAS:
 
     npm install -g eas-cli
-
-Faça login:
-
     eas login
-
-Configure o projeto, caso seja a primeira execução:
-
     eas build:configure
-
-Gere o APK de teste:
-
     eas build -p android --profile preview
 
 O perfil `preview` já está configurado em `eas.json` para gerar APK.
