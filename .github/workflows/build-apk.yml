@@ -2,11 +2,13 @@ name: Build APK
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
 
 jobs:
   apk:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
 
     steps:
       - name: Checkout
@@ -27,17 +29,31 @@ jobs:
         run: npm install
 
       - name: Generate Android project
-        run: npx expo prebuild --platform android --non-interactive
+        env:
+          CI: "1"
+        run: npx expo prebuild --platform android --clean --non-interactive
 
-      - name: Build debug APK
+      - name: Build standalone release APK
+        env:
+          CI: "1"
         run: |
           chmod +x android/gradlew
           cd android
-          ./gradlew assembleDebug
+          ./gradlew assembleRelease
+
+      - name: Verify JavaScript bundle is embedded
+        run: |
+          unzip -l android/app/build/outputs/apk/release/app-release.apk | grep -q "assets/index.android.bundle"
+          echo "Standalone JS bundle confirmed inside APK."
+
+      - name: Prepare artifact
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk Treino-Comuna-Plus-v0.1.1.apk
+          ls -lh Treino-Comuna-Plus-v0.1.1.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Treino-Comuna-Plus-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 14
+          name: Treino-Comuna-Plus-v0.1.1
+          path: Treino-Comuna-Plus-v0.1.1.apk
+          retention-days: 30
