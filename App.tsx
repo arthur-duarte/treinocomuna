@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Image,
+  ImageBackground,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -33,6 +34,8 @@ import {
   SetLog,
   WorkoutLog
 } from './src/storage';
+
+const APP_ART = require('./assets/app-icon.png');
 
 const C = {
   red: '#B71C1C',
@@ -187,11 +190,8 @@ function HeaderPoster({
   speech?: string;
 }) {
   return (
-    <View style={styles.poster}>
-      <View style={styles.posterSlash} />
-      <View style={styles.posterDots}>
-        {Array.from({ length: 20 }).map((_, i) => <View key={i} style={styles.dot} />)}
-      </View>
+    <ImageBackground source={APP_ART} style={styles.poster} imageStyle={styles.posterImage}>
+      <View style={styles.posterOverlay} />
       <View style={{ flex: 1, zIndex: 2 }}>
         <Text style={styles.eyebrow}>{eyebrow}</Text>
         <Text style={styles.posterTitle}>{title}</Text>
@@ -203,7 +203,7 @@ function HeaderPoster({
       <View style={styles.mascotWrap}>
         <Camarada size={112} />
       </View>
-    </View>
+    </ImageBackground>
   );
 }
 
@@ -1028,12 +1028,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 22,
-    backgroundColor: C.cream,
+    backgroundColor: C.ink,
     flexDirection: 'row',
     overflow: 'hidden',
     borderBottomWidth: 7,
     borderBottomColor: C.red
   },
+  posterImage: { resizeMode: 'cover', opacity: 0.68 },
+  posterOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.52)' },
   posterSlash: {
     position: 'absolute',
     width: 180,
@@ -1054,11 +1056,11 @@ const styles = StyleSheet.create({
     opacity: 0.28
   },
   dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: C.ink },
-  eyebrow: { color: C.red, fontWeight: '900', letterSpacing: 2.2, fontSize: 12, marginBottom: 6 },
-  posterTitle: { color: C.ink, fontSize: 34, lineHeight: 36, fontWeight: '900', letterSpacing: -1 },
+  eyebrow: { color: C.yellow, fontWeight: '900', letterSpacing: 2.2, fontSize: 12, marginBottom: 6 },
+  posterTitle: { color: C.white, fontSize: 34, lineHeight: 36, fontWeight: '900', letterSpacing: -1, textShadowColor: 'rgba(0,0,0,0.7)', textShadowOffset: { width: 1, height: 2 }, textShadowRadius: 2 },
   posterBanner: { alignSelf: 'flex-start', backgroundColor: C.ink, paddingHorizontal: 10, paddingVertical: 7, marginTop: 10, transform: [{ rotate: '-1deg' }] },
   posterBannerText: { color: C.cream, fontWeight: '900', fontSize: 12, letterSpacing: 0.8 },
-  posterSpeech: { color: C.redDark, fontWeight: '900', fontSize: 15, lineHeight: 19, maxWidth: 230, marginTop: 18 },
+  posterSpeech: { color: C.cream, fontWeight: '900', fontSize: 15, lineHeight: 19, maxWidth: 230, marginTop: 18, textShadowColor: 'rgba(0,0,0,0.7)', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 2 },
   mascotWrap: { width: 105, justifyContent: 'flex-end', alignItems: 'center', zIndex: 2 },
   stamp: {
     alignSelf: 'flex-start',
