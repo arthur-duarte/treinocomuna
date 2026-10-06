@@ -17,6 +17,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Camarada } from './src/components/Camarada';
+import { EquipmentSketch } from './src/components/EquipmentSketch';
 import {
   Exercise,
   getWorkoutForDate,
@@ -484,6 +485,8 @@ function WorkoutScreen({
                 </Text>
               </View>
             </View>
+
+            <View style={styles.equipmentSketchWrap}><Text style={styles.equipmentSketchLabel}>IDENTIFIQUE O APARELHO</Text><EquipmentSketch name={exercise.name} /></View>
 
             {exercise.note ? <Text style={styles.exerciseNote}>⚑ {exercise.note}</Text> : null}
 
@@ -1132,6 +1135,8 @@ const styles = StyleSheet.create({
   exerciseNumberText: { color: C.white, fontSize: 25, fontWeight: '900' },
   exerciseName: { color: C.ink, fontWeight: '900', fontSize: 17, paddingTop: 10, paddingHorizontal: 10 },
   exerciseMeta: { color: C.redDark, fontWeight: '800', fontSize: 10, paddingHorizontal: 10, paddingBottom: 10 },
+  equipmentSketchWrap: { backgroundColor: '#E8D9B9', borderTopWidth: 2, borderBottomWidth: 1, borderColor: '#A99878', paddingHorizontal: 8, paddingTop: 7 },
+  equipmentSketchLabel: { color: C.redDark, fontSize: 8, fontWeight: '900', letterSpacing: 1.1, marginLeft: 4, marginBottom: -4 },
   exerciseNote: { color: C.ink, fontSize: 11, backgroundColor: C.yellow, padding: 8, fontWeight: '700' },
   setHead: { flexDirection: 'row', paddingHorizontal: 10, paddingTop: 10, paddingBottom: 3, gap: 6 },
   setHeadText: { color: C.muted, fontSize: 8, fontWeight: '900', letterSpacing: 0.8 },
