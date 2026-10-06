@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "Treino Comuna+",
+    "slug": "treino-comuna-mais",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "android": {
+      "package": "br.com.treinocomunamais.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#B71C1C"
+      }
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "O Treino Comuna+ usa a câmera para registrar sua foto ao fim do treino.",
+          "photosPermission": "O Treino Comuna+ acessa suas fotos somente quando você escolher uma imagem de progresso."
+        }
+      ]
+    ]
+  }
+}
