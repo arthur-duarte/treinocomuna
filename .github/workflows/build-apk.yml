@@ -8,7 +8,7 @@ on:
 jobs:
   apk:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 40
 
     steps:
       - name: Checkout
@@ -26,60 +26,18 @@ jobs:
           java-version: '17'
 
       - name: Install
-        run: |
-          npm install
-          npx expo install babel-preset-expo
+        run: npm install
 
-      - name: Generate valid app artwork
+      - name: Restore official app icon
         run: |
-          python3 -m pip install --quiet pillow
+          cat assets/icon.b64.part1 assets/icon.b64.part2 assets/icon.b64.part3 | base64 -d > assets/app-icon.png
+          echo "d89dd909e8eef7479a739676b83ac062295960c92ec2bf0f0107aa84627c8db9  assets/app-icon.png" | sha256sum -c -
           python3 - <<'PY'
-          from PIL import Image, ImageDraw
-          import math
-          s=1024
-          im=Image.new("RGB",(s,s),(142,16,16))
-          d=ImageDraw.Draw(im)
-          cx=cy=s//2
-          # revolutionary radial rays
-          colors=[(178,24,24),(116,10,10)]
-          for i in range(24):
-              a1=2*math.pi*i/24
-              a2=2*math.pi*(i+1)/24
-              r=s*0.85
-              pts=[(cx,cy),(cx+r*math.cos(a1),cy+r*math.sin(a1)),(cx+r*math.cos(a2),cy+r*math.sin(a2))]
-              d.polygon(pts, fill=colors[i%2])
-          # cream ring
-          d.ellipse((160,140,864,844), outline=(247,230,190), width=62)
-          # gold star
-          pts=[]
-          for i in range(10):
-              a=-math.pi/2+i*math.pi/5
-              r=112 if i%2==0 else 46
-              pts.append((cx+r*math.cos(a),210+r*math.sin(a)))
-          d.polygon(pts, fill=(224,168,44))
-          # bar
-          d.rounded_rectangle((150,460,874,555), radius=28, fill=(20,20,20))
-          d.rounded_rectangle((245,486,779,529), radius=18, fill=(247,230,190))
-          # plates
-          for x in (120,810):
-              d.rounded_rectangle((x,350,x+95,665), radius=28, fill=(18,18,18))
-              d.rounded_rectangle((x+18,370,x+65,645), radius=16, fill=(224,168,44))
-          for x in (72,875):
-              d.rounded_rectangle((x,405,x+70,610), radius=22, fill=(18,18,18))
-              d.rounded_rectangle((x+14,425,x+45,590), radius=12, fill=(224,168,44))
-          # stylized clenched fist / forearm
-          cream=(247,230,190); ink=(16,16,16)
-          d.polygon([(425,430),(470,355),(535,340),(605,385),(620,475),(570,550),(555,700),(485,860),(425,760),(445,560),(390,500)], fill=cream)
-          # black shadow facets
-          d.polygon([(390,500),(445,560),(425,760),(360,900),(315,900),(360,610)], fill=ink)
-          d.polygon([(520,548),(570,550),(555,700),(500,640)], fill=ink)
-          # fingers
-          for box in [(444,365,492,455),(495,350,545,450),(547,365,597,465)]:
-              d.rounded_rectangle(box, radius=15, fill=cream, outline=ink, width=10)
-          # wrist/star mark
-          d.polygon([(462,500),(485,483),(508,500),(499,528),(471,528)], fill=ink)
-          im.save("assets/app-icon.png","PNG",optimize=False,compress_level=6)
-          print("Generated artwork:", im.size, im.mode)
+          from PIL import Image
+          im = Image.open("assets/app-icon.png")
+          assert im.size == (128, 128), im.size
+          im.verify()
+          print("Official icon verified.")
           PY
 
       - name: Generate Android project
@@ -87,7 +45,7 @@ jobs:
           CI: "1"
         run: npx expo prebuild --platform android --clean
 
-      - name: Build standalone release APK
+      - name: Build release APK
         env:
           CI: "1"
         run: |
@@ -95,19 +53,73 @@ jobs:
           cd android
           ./gradlew assembleRelease
 
-      - name: Verify JavaScript bundle is embedded
+      - name: Find Android signing tools
         run: |
-          unzip -l android/app/build/outputs/apk/release/app-release.apk | grep -q "assets/index.android.bundle"
-          echo "Standalone JavaScript bundle confirmed inside APK."
+          BUILD_TOOLS_DIR="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          echo "BUILD_TOOLS_DIR=$BUILD_TOOLS_DIR" >> "$GITHUB_ENV"
+          test -x "$BUILD_TOOLS_DIR/zipalign"
+          test -x "$BUILD_TOOLS_DIR/apksigner"
 
-      - name: Prepare artifact
+      - name: Create release test key
         run: |
-          cp android/app/build/outputs/apk/release/app-release.apk Treino-Comuna-Plus-v0.1.1.apk
-          ls -lh Treino-Comuna-Plus-v0.1.1.apk
+          keytool -genkeypair -noprompt \
+            -keystore "$RUNNER_TEMP/treinocomuna-release.jks" \
+            -alias treinocomuna \
+            -keyalg RSA -keysize 2048 -validity 3650 \
+            -storepass "treinocomuna-build" \
+            -keypass "treinocomuna-build" \
+            -dname "CN=Treino Comuna, OU=AppsPlus, O=Treino Comuna, L=Belo Horizonte, ST=MG, C=BR"
+
+      - name: Align and sign APK with Android v2/v3 schemes
+        run: |
+          SOURCE_APK="$(find android/app/build/outputs/apk/release -maxdepth 1 -type f -name '*.apk' | head -n 1)"
+          test -n "$SOURCE_APK"
+          echo "Source APK: $SOURCE_APK"
+
+          "$BUILD_TOOLS_DIR/zipalign" -p -f 4 "$SOURCE_APK" "$RUNNER_TEMP/treinocomuna-aligned.apk"
+
+          "$BUILD_TOOLS_DIR/apksigner" sign \
+            --ks "$RUNNER_TEMP/treinocomuna-release.jks" \
+            --ks-key-alias treinocomuna \
+            --ks-pass pass:treinocomuna-build \
+            --key-pass pass:treinocomuna-build \
+            --v1-signing-enabled true \
+            --v2-signing-enabled true \
+            --v3-signing-enabled true \
+            --out Treino-Comuna-Plus-v0.1.3.apk \
+            "$RUNNER_TEMP/treinocomuna-aligned.apk"
+
+      - name: Verify signature and package integrity
+        run: |
+          "$BUILD_TOOLS_DIR/apksigner" verify --verbose --print-certs Treino-Comuna-Plus-v0.1.3.apk
+          "$BUILD_TOOLS_DIR/zipalign" -c -v 4 Treino-Comuna-Plus-v0.1.3.apk
+
+          unzip -l Treino-Comuna-Plus-v0.1.3.apk | grep -q "assets/index.android.bundle"
+          BUNDLE_SIZE="$(unzip -l Treino-Comuna-Plus-v0.1.3.apk assets/index.android.bundle | awk 'NR==4 {print $1}')"
+          test "$BUNDLE_SIZE" -gt 100000
+          echo "Embedded bundle size: $BUNDLE_SIZE bytes"
+
+          AAPT="$BUILD_TOOLS_DIR/aapt"
+          if [ -x "$AAPT" ]; then
+            "$AAPT" dump badging Treino-Comuna-Plus-v0.1.3.apk | tee "$RUNNER_TEMP/badging.txt"
+            grep -q "package: name='br.com.treinocomunamais.app'" "$RUNNER_TEMP/badging.txt"
+            grep -q "application-label:'Treino Comuna+'" "$RUNNER_TEMP/badging.txt"
+          fi
+
+      - name: Smoke-check packaged JavaScript
+        run: |
+          unzip -p Treino-Comuna-Plus-v0.1.3.apk assets/index.android.bundle > "$RUNNER_TEMP/index.android.bundle"
+          test -s "$RUNNER_TEMP/index.android.bundle"
+          echo "JavaScript bundle present and readable."
+
+      - name: APK summary
+        run: |
+          ls -lh Treino-Comuna-Plus-v0.1.3.apk
+          sha256sum Treino-Comuna-Plus-v0.1.3.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Treino-Comuna-Plus-v0.1.1
-          path: Treino-Comuna-Plus-v0.1.1.apk
+          name: Treino-Comuna-Plus-v0.1.3
+          path: Treino-Comuna-Plus-v0.1.3.apk
           retention-days: 30
