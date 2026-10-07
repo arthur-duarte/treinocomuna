@@ -2,7 +2,7 @@
   "expo": {
     "name": "Treino Comuna+",
     "slug": "treino-comuna-mais",
-    "version": "0.1.3",
+    "version": "0.2.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "icon": "./assets/app-icon.png",
@@ -12,9 +12,18 @@
       "resizeMode": "contain",
       "backgroundColor": "#111111"
     },
+    "androidStatusBar": {
+      "hidden": true,
+      "translucent": true,
+      "backgroundColor": "#00000000"
+    },
+    "androidNavigationBar": {
+      "visible": "leanback",
+      "backgroundColor": "#111111"
+    },
     "android": {
       "package": "br.com.treinocomunamais.app",
-      "versionCode": 3,
+      "versionCode": 4,
       "adaptiveIcon": {
         "foregroundImage": "./assets/app-icon.png",
         "backgroundColor": "#8F1010"
@@ -24,10 +33,11 @@
       [
         "expo-image-picker",
         {
-          "cameraPermission": "O Treino Comuna+ usa a câmera para registrar sua foto ao fim do treino.",
-          "photosPermission": "O Treino Comuna+ acessa suas fotos somente quando você escolher uma imagem de progresso."
+          "cameraPermission": "O Treino Comuna+ usa a câmera para registrar fotos de treino e progresso.",
+          "photosPermission": "O Treino Comuna+ acessa suas fotos somente quando você escolher uma imagem."
         }
-      ]
+      ],
+      "expo-navigation-bar"
     ]
   }
 }
