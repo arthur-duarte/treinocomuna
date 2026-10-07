@@ -6,6 +6,7 @@ export type ExerciseDef = {
   category: 'PEITO' | 'COSTAS' | 'PERNAS' | 'OMBROS' | 'BRAÇOS' | 'CORE' | 'CARDIO' | 'CORPO TODO';
   equipment: string;
   imageKey?: string;
+  imageUri?: string;
   instructions: string[];
   tips?: string[];
   muscles?: string[];
