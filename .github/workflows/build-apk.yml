@@ -32,13 +32,8 @@ jobs:
         run: |
           cat assets/icon.b64.part1 assets/icon.b64.part2 assets/icon.b64.part3 | base64 -d > assets/app-icon.png
           echo "d89dd909e8eef7479a739676b83ac062295960c92ec2bf0f0107aa84627c8db9  assets/app-icon.png" | sha256sum -c -
-          python3 - <<'PY'
-          from PIL import Image
-          im = Image.open("assets/app-icon.png")
-          assert im.size == (128, 128), im.size
-          im.verify()
-          print("Official icon verified.")
-          PY
+          file assets/app-icon.png | grep -q "PNG image data, 128 x 128"
+          echo "Official icon verified."
 
       - name: Generate Android project
         env:
