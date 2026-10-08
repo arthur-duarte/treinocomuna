@@ -4,7 +4,6 @@ import {
   StyleSheet, Text, TextInput, View
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import * as NavigationBar from 'expo-navigation-bar';
 import { CamaradaDog, DogMood } from './src/components/CamaradaDog';
 import { defaultDataV2 } from './src/v2/defaults';
 import { exerciseImage } from './src/v2/imageMap';
@@ -17,6 +16,28 @@ import {
   goalProgressRatio, levelFromXp, logsInCurrentWeek, refreshAchievements, xpForWorkout,
   computeGoalProgress, isGoalComplete
 } from './src/v2/gamification';
+
+class AppErrorBoundary extends React.Component<{children: React.ReactNode},{error: Error|null}> {
+  state:{error:Error|null}={error:null};
+  static getDerivedStateFromError(error:Error){ return {error}; }
+  componentDidCatch(error:Error, info:React.ErrorInfo){ console.error('Treino Comuna+ runtime error', error, info); }
+  render(){
+    if(this.state.error){
+      return <SafeAreaView style={{flex:1,backgroundColor:'#080B0D',padding:24,justifyContent:'center'}}>
+        <Text style={{color:'#F1B52C',fontSize:14,fontWeight:'900',letterSpacing:1}}>TREINO COMUNA+</Text>
+        <Text style={{color:'#FFFFFF',fontSize:28,fontWeight:'900',marginTop:10}}>O app encontrou um erro.</Text>
+        <Text style={{color:'#D5D9DA',fontSize:14,lineHeight:20,marginTop:12}}>A tela de segurança impediu o aplicativo de fechar. Esta mensagem ajuda a identificar a causa:</Text>
+        <View style={{backgroundColor:'#171D20',padding:14,borderRadius:10,marginTop:16}}>
+          <Text selectable style={{color:'#FF8A8A',fontSize:12,lineHeight:18}}>{String(this.state.error?.message||this.state.error)}</Text>
+        </View>
+        <Pressable onPress={()=>this.setState({error:null})} style={{backgroundColor:'#E3172D',padding:14,borderRadius:9,alignItems:'center',marginTop:18}}>
+          <Text style={{color:'#FFF',fontWeight:'900'}}>TENTAR NOVAMENTE</Text>
+        </Pressable>
+      </SafeAreaView>;
+    }
+    return this.props.children;
+  }
+}
 
 const C = {
   bg:'#080B0D', card:'#111619', card2:'#171D20', line:'#283034',
@@ -141,7 +162,6 @@ function WorkoutMode({data,workout,mode,onCancel,onFinish}:{data:AppDataV2;worko
   const item=list[idx], ex=exById(data,item.exerciseId)!;
 
   useEffect(()=>{ if(rest<=0)return; const t=setInterval(()=>setRest(r=>Math.max(0,r-1)),1000); return()=>clearInterval(t);},[rest]);
-  useEffect(()=>{ if(Platform.OS==='android'&&data.preferences.fullscreen){ NavigationBar.setBehaviorAsync('overlay-swipe').catch(()=>{}); NavigationBar.setVisibilityAsync('hidden').catch(()=>{});} return()=>{if(Platform.OS==='android')NavigationBar.setVisibilityAsync('visible').catch(()=>{});};},[]);
 
   function update(si:number,key:'load'|'reps',v:string){setLogs(p=>({...p,[item.id]:p[item.id].map((x,i)=>i===si?{...x,[key]:v}:x)}));}
   function toggle(si:number){const was=logs[item.id][si].done;setLogs(p=>({...p,[item.id]:p[item.id].map((x,i)=>i===si?{...x,done:!x.done}:x)}));if(!was&&item.rest>0&&data.preferences.restAutoStart)setRest(item.rest);}
@@ -267,7 +287,7 @@ function FinishModal({visible,data,log,onSave}:{visible:boolean;data:AppDataV2;l
   return <Modal visible={visible} transparent animationType="slide"><View style={s.modalShade}><View style={s.finish}><CamaradaDog size={116} mood="vitoria"/><Text style={s.finishTitle}>TREINO CONCLUÍDO!</Text><Text style={s.finishText}>Mais um passo na revolução. Excelente trabalho, camarada.</Text><RedButton text="📷 FOTO DA VITÓRIA" onPress={photo}/><DarkButton text="CONCLUIR SEM FOTO" onPress={()=>onSave(log)}/></View></View></Modal>;
 }
 
-export default function App(){
+function TreinoComunaApp(){
   const [data,setDataRaw]=useState<AppDataV2>(defaultDataV2),[loaded,setLoaded]=useState(false),[tab,setTab]=useState<Tab>('hoje');
   const [active,setActive]=useState<{w:WorkoutTemplate;mode:'normal'|'minimo'}|null>(null),[pending,setPending]=useState<WorkoutLog|null>(null);
   useEffect(()=>{loadV2().then(d=>{setDataRaw(d);setLoaded(true);});},[]);
@@ -311,3 +331,8 @@ const s=StyleSheet.create({
   profileHero:{flexDirection:'row',alignItems:'center',gap:12,backgroundColor:C.card,borderRadius:14,padding:12,marginBottom:10},profileName:{color:C.white,fontWeight:'900',fontSize:18},menuRow:{height:54,backgroundColor:C.card,borderBottomWidth:1,borderBottomColor:C.line,flexDirection:'row',alignItems:'center',paddingHorizontal:12},menuIcon:{color:C.gold,width:32,fontSize:17},menuText:{color:C.white,flex:1,fontWeight:'700'},menuArrow:{color:C.muted,fontSize:24},settingRow:{minHeight:52,backgroundColor:C.card,borderBottomWidth:1,borderBottomColor:C.line,paddingHorizontal:12,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},settingText:{color:C.white,fontWeight:'700'},
   modalShade:{flex:1,backgroundColor:'rgba(0,0,0,.82)',justifyContent:'flex-end'},finish:{backgroundColor:C.card,padding:24,alignItems:'center',borderTopLeftRadius:24,borderTopRightRadius:24},finishTitle:{color:C.white,fontSize:25,fontWeight:'900',marginTop:9},finishText:{color:C.cream,textAlign:'center',lineHeight:19,marginVertical:8}
 });
+
+
+export default function App(){
+  return <AppErrorBoundary><TreinoComunaApp/></AppErrorBoundary>;
+}
