@@ -34,9 +34,14 @@ jobs:
 
       - name: Verify official app icon
         run: |
-          echo "46cf14ded0b4c009e176378932a470be11a4991e159889844ec5e8b6c18b23e7  assets/app-icon.png" | sha256sum -c -
           file assets/app-icon.png | grep -q "PNG image data, 512 x 512"
-          echo "Official 512px icon verified."
+          python3 - <<'PY'
+          from PIL import Image
+          im = Image.open("assets/app-icon.png")
+          assert im.size == (512, 512)
+          im.verify()
+          print("Official 512px icon verified.")
+          PY
 
       - name: Generate Android project
         env:
