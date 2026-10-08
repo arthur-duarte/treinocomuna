@@ -32,12 +32,11 @@ jobs:
       - name: Install
         run: npm install
 
-      - name: Restore official app icon
+      - name: Verify official app icon
         run: |
-          cat assets/icon.b64.part1 assets/icon.b64.part2 assets/icon.b64.part3 | base64 -d > assets/app-icon.png
-          echo "d89dd909e8eef7479a739676b83ac062295960c92ec2bf0f0107aa84627c8db9  assets/app-icon.png" | sha256sum -c -
-          file assets/app-icon.png | grep -q "PNG image data, 128 x 128"
-          echo "Official icon verified."
+          echo "46cf14ded0b4c009e176378932a470be11a4991e159889844ec5e8b6c18b23e7  assets/app-icon.png" | sha256sum -c -
+          file assets/app-icon.png | grep -q "PNG image data, 512 x 512"
+          echo "Official 512px icon verified."
 
       - name: Generate Android project
         env:
@@ -85,40 +84,40 @@ jobs:
             --v1-signing-enabled true \
             --v2-signing-enabled true \
             --v3-signing-enabled true \
-            --out Treino-Comuna-Plus-v2.0.0.apk \
+            --out Treino-Comuna-Plus-v2.0.1.apk \
             "$RUNNER_TEMP/treinocomuna-aligned.apk"
 
       - name: Verify signature and package integrity
         run: |
-          "$BUILD_TOOLS_DIR/apksigner" verify --verbose --print-certs Treino-Comuna-Plus-v2.0.0.apk
-          "$BUILD_TOOLS_DIR/zipalign" -c -v 4 Treino-Comuna-Plus-v2.0.0.apk
+          "$BUILD_TOOLS_DIR/apksigner" verify --verbose --print-certs Treino-Comuna-Plus-v2.0.1.apk
+          "$BUILD_TOOLS_DIR/zipalign" -c -v 4 Treino-Comuna-Plus-v2.0.1.apk
 
-          unzip -l Treino-Comuna-Plus-v2.0.0.apk | grep -q "assets/index.android.bundle"
-          BUNDLE_SIZE="$(unzip -l Treino-Comuna-Plus-v2.0.0.apk assets/index.android.bundle | awk 'NR==4 {print $1}')"
+          unzip -l Treino-Comuna-Plus-v2.0.1.apk | grep -q "assets/index.android.bundle"
+          BUNDLE_SIZE="$(unzip -l Treino-Comuna-Plus-v2.0.1.apk assets/index.android.bundle | awk 'NR==4 {print $1}')"
           test "$BUNDLE_SIZE" -gt 100000
           echo "Embedded bundle size: $BUNDLE_SIZE bytes"
 
           AAPT="$BUILD_TOOLS_DIR/aapt"
           if [ -x "$AAPT" ]; then
-            "$AAPT" dump badging Treino-Comuna-Plus-v2.0.0.apk | tee "$RUNNER_TEMP/badging.txt"
+            "$AAPT" dump badging Treino-Comuna-Plus-v2.0.1.apk | tee "$RUNNER_TEMP/badging.txt"
             grep -q "package: name='br.com.treinocomunamais.app'" "$RUNNER_TEMP/badging.txt"
             grep -q "application-label:'Treino Comuna+'" "$RUNNER_TEMP/badging.txt"
           fi
 
       - name: Smoke-check packaged JavaScript
         run: |
-          unzip -p Treino-Comuna-Plus-v2.0.0.apk assets/index.android.bundle > "$RUNNER_TEMP/index.android.bundle"
+          unzip -p Treino-Comuna-Plus-v2.0.1.apk assets/index.android.bundle > "$RUNNER_TEMP/index.android.bundle"
           test -s "$RUNNER_TEMP/index.android.bundle"
           echo "JavaScript bundle present and readable."
 
       - name: APK summary
         run: |
-          ls -lh Treino-Comuna-Plus-v2.0.0.apk
-          sha256sum Treino-Comuna-Plus-v2.0.0.apk
+          ls -lh Treino-Comuna-Plus-v2.0.1.apk
+          sha256sum Treino-Comuna-Plus-v2.0.1.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Treino-Comuna-Plus-v2.0.0
-          path: Treino-Comuna-Plus-v2.0.0.apk
+          name: Treino-Comuna-Plus-v2.0.1
+          path: Treino-Comuna-Plus-v2.0.1.apk
           retention-days: 30
