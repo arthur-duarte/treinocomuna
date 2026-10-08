@@ -32,10 +32,19 @@ jobs:
       - name: Install
         run: npm install
 
-      - name: Verify official app icon
+      - name: Restore and upscale official app icon
         run: |
-          file assets/app-icon.png | grep -q "PNG image data, 512 x 512"
-          echo "Official 512px icon verified."
+          cat assets/icon.b64.part1 assets/icon.b64.part2 assets/icon.b64.part3 | base64 -d > "$RUNNER_TEMP/app-icon-source.png"
+          python3 -m pip install --quiet pillow
+          python3 - <<'PY'
+          from PIL import Image, ImageFilter
+          src = Image.open("/home/runner/work/_temp/app-icon-source.png").convert("RGB")
+          src = src.resize((1024, 1024), Image.Resampling.LANCZOS)
+          src = src.filter(ImageFilter.UnsharpMask(radius=1.1, percent=115, threshold=2))
+          src.save("assets/app-icon.png", "PNG", optimize=False, compress_level=6)
+          print("Official artwork restored and prepared at", src.size)
+          PY
+          file assets/app-icon.png | grep -q "PNG image data, 1024 x 1024"
 
       - name: Generate Android project
         env:
