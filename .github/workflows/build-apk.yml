@@ -118,6 +118,37 @@ jobs:
           test -s "$RUNNER_TEMP/index.android.bundle"
           echo "JavaScript bundle present and readable."
 
+      - name: Runtime smoke test on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          script: |
+            adb logcat -c
+            adb install -r Treino-Comuna-Plus-v2.0.1.apk
+            adb shell am force-stop br.com.treinocomunamais.app
+            adb shell monkey -p br.com.treinocomunamais.app -c android.intent.category.LAUNCHER 1
+            sleep 8
+            adb shell pidof br.com.treinocomunamais.app
+            adb logcat -d > "$RUNNER_TEMP/runtime-logcat.txt"
+            if grep -E "FATAL EXCEPTION|AndroidRuntime:.*Process: br.com.treinocomunamais.app|ReactNativeJS:.*(TypeError|ReferenceError|Invariant Violation)" "$RUNNER_TEMP/runtime-logcat.txt"; then
+              echo "Runtime crash detected."
+              tail -n 250 "$RUNNER_TEMP/runtime-logcat.txt"
+              exit 1
+            fi
+            echo "Runtime launch test passed."
+
+      - name: Upload runtime log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Treino-Comuna-Plus-v2.0.1-runtime-log
+          path: ${{ runner.temp }}/runtime-logcat.txt
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: APK summary
         run: |
           ls -lh Treino-Comuna-Plus-v2.0.1.apk
