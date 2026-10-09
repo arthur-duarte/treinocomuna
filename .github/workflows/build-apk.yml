@@ -35,7 +35,7 @@ jobs:
       - name: Restore and upscale official app icon
         run: |
           cat assets/icon.b64.part1 assets/icon.b64.part2 assets/icon.b64.part3 | base64 -d > "$RUNNER_TEMP/app-icon-source.png"
-          python3 -m pip install --quiet pillow
+          python3 -m pip install --quiet --user --break-system-packages pillow
           python3 - <<'PY'
           from PIL import Image, ImageFilter
           import os\n          src = Image.open(os.path.join(os.environ["RUNNER_TEMP"], "app-icon-source.png")).convert("RGB")
