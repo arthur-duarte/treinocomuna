@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   apk:
-    runs-on: ubuntu-latest
+    runs-on: macos-14
     timeout-minutes: 40
 
     steps:
@@ -38,7 +38,7 @@ jobs:
           python3 -m pip install --quiet pillow
           python3 - <<'PY'
           from PIL import Image, ImageFilter
-          src = Image.open("/home/runner/work/_temp/app-icon-source.png").convert("RGB")
+          import os\n          src = Image.open(os.path.join(os.environ["RUNNER_TEMP"], "app-icon-source.png")).convert("RGB")
           src = src.resize((1024, 1024), Image.Resampling.LANCZOS)
           src = src.filter(ImageFilter.UnsharpMask(radius=1.1, percent=115, threshold=2))
           src.save("assets/app-icon.png", "PNG", optimize=False, compress_level=6)
@@ -92,29 +92,29 @@ jobs:
             --v1-signing-enabled true \
             --v2-signing-enabled true \
             --v3-signing-enabled true \
-            --out Treino-Comuna-Plus-v2.0.1.apk \
+            --out Treino-Comuna-Plus-v2.0.2.apk \
             "$RUNNER_TEMP/treinocomuna-aligned.apk"
 
       - name: Verify signature and package integrity
         run: |
-          "$BUILD_TOOLS_DIR/apksigner" verify --verbose --print-certs Treino-Comuna-Plus-v2.0.1.apk
-          "$BUILD_TOOLS_DIR/zipalign" -c -v 4 Treino-Comuna-Plus-v2.0.1.apk
+          "$BUILD_TOOLS_DIR/apksigner" verify --verbose --print-certs Treino-Comuna-Plus-v2.0.2.apk
+          "$BUILD_TOOLS_DIR/zipalign" -c -v 4 Treino-Comuna-Plus-v2.0.2.apk
 
-          unzip -l Treino-Comuna-Plus-v2.0.1.apk | grep -q "assets/index.android.bundle"
-          BUNDLE_SIZE="$(unzip -l Treino-Comuna-Plus-v2.0.1.apk assets/index.android.bundle | awk 'NR==4 {print $1}')"
+          unzip -l Treino-Comuna-Plus-v2.0.2.apk | grep -q "assets/index.android.bundle"
+          BUNDLE_SIZE="$(unzip -l Treino-Comuna-Plus-v2.0.2.apk assets/index.android.bundle | awk 'NR==4 {print $1}')"
           test "$BUNDLE_SIZE" -gt 100000
           echo "Embedded bundle size: $BUNDLE_SIZE bytes"
 
           AAPT="$BUILD_TOOLS_DIR/aapt"
           if [ -x "$AAPT" ]; then
-            "$AAPT" dump badging Treino-Comuna-Plus-v2.0.1.apk | tee "$RUNNER_TEMP/badging.txt"
+            "$AAPT" dump badging Treino-Comuna-Plus-v2.0.2.apk | tee "$RUNNER_TEMP/badging.txt"
             grep -q "package: name='br.com.treinocomunamais.app'" "$RUNNER_TEMP/badging.txt"
             grep -q "application-label:'Treino Comuna+'" "$RUNNER_TEMP/badging.txt"
           fi
 
       - name: Smoke-check packaged JavaScript
         run: |
-          unzip -p Treino-Comuna-Plus-v2.0.1.apk assets/index.android.bundle > "$RUNNER_TEMP/index.android.bundle"
+          unzip -p Treino-Comuna-Plus-v2.0.2.apk assets/index.android.bundle > "$RUNNER_TEMP/index.android.bundle"
           test -s "$RUNNER_TEMP/index.android.bundle"
           echo "JavaScript bundle present and readable."
 
@@ -127,7 +127,7 @@ jobs:
           disable-animations: true
           script: |
             adb logcat -c
-            adb install -r Treino-Comuna-Plus-v2.0.1.apk
+            adb install -r Treino-Comuna-Plus-v2.0.2.apk
             adb shell am force-stop br.com.treinocomunamais.app
             adb shell monkey -p br.com.treinocomunamais.app -c android.intent.category.LAUNCHER 1
             sleep 8
@@ -144,19 +144,19 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Treino-Comuna-Plus-v2.0.1-runtime-log
+          name: Treino-Comuna-Plus-v2.0.2-runtime-log
           path: ${{ runner.temp }}/runtime-logcat.txt
           if-no-files-found: ignore
           retention-days: 7
 
       - name: APK summary
         run: |
-          ls -lh Treino-Comuna-Plus-v2.0.1.apk
-          sha256sum Treino-Comuna-Plus-v2.0.1.apk
+          ls -lh Treino-Comuna-Plus-v2.0.2.apk
+          sha256sum Treino-Comuna-Plus-v2.0.2.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Treino-Comuna-Plus-v2.0.1
-          path: Treino-Comuna-Plus-v2.0.1.apk
+          name: Treino-Comuna-Plus-v2.0.2
+          path: Treino-Comuna-Plus-v2.0.2.apk
           retention-days: 30
