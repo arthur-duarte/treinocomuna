@@ -2,7 +2,7 @@
   "expo": {
     "name": "Treino Comuna+",
     "slug": "treino-comuna-mais",
-    "version": "2.0.1",
+    "version": "2.0.2",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "icon": "./assets/app-icon.png",
@@ -19,7 +19,7 @@
     },
     "android": {
       "package": "br.com.treinocomunamais.app",
-      "versionCode": 6,
+      "versionCode": 7,
       "adaptiveIcon": {
         "foregroundImage": "./assets/app-icon.png",
         "backgroundColor": "#8F1010"
