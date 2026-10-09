@@ -38,7 +38,8 @@ jobs:
           python3 -m pip install --quiet --user --break-system-packages pillow
           python3 - <<'PY'
           from PIL import Image, ImageFilter
-          import os\n          src = Image.open(os.path.join(os.environ["RUNNER_TEMP"], "app-icon-source.png")).convert("RGB")
+          import os
+          src = Image.open(os.path.join(os.environ["RUNNER_TEMP"], "app-icon-source.png")).convert("RGB")
           src = src.resize((1024, 1024), Image.Resampling.LANCZOS)
           src = src.filter(ImageFilter.UnsharpMask(radius=1.1, percent=115, threshold=2))
           src.save("assets/app-icon.png", "PNG", optimize=False, compress_level=6)
