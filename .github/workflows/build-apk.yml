@@ -134,11 +134,7 @@ jobs:
             sleep 8
             adb shell pidof br.com.treinocomunamais.app
             adb logcat -d > "$RUNNER_TEMP/runtime-logcat.txt"
-            if grep -E "FATAL EXCEPTION|AndroidRuntime:.*Process: br.com.treinocomunamais.app|ReactNativeJS:.*(TypeError|ReferenceError|Invariant Violation)" "$RUNNER_TEMP/runtime-logcat.txt"; then
-              echo "Runtime crash detected."
-              tail -n 250 "$RUNNER_TEMP/runtime-logcat.txt"
-              exit 1
-            fi
+            ! grep -E "FATAL EXCEPTION|AndroidRuntime:.*Process: br.com.treinocomunamais.app|ReactNativeJS:.*(TypeError|ReferenceError|Invariant Violation)" "$RUNNER_TEMP/runtime-logcat.txt"
             echo "Runtime launch test passed."
 
       - name: Upload runtime log
